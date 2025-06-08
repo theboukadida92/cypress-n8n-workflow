@@ -1,0 +1,97 @@
+name: Cypress Tests with Telegram Notifications
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Cypress tests
+        run: |
+          npx cypress run --reporter mochawesome \
+            --reporter-options reportDir="cypress/results",overwrite=false,html=false,json=true
+        continue-on-error: true
+
+      - name: Merge reports
+        run: npx mochawesome-merge "cypress/results/*.json" > mochawesome.json
+        if: always()
+
+      - name: Generate HTML report
+        run: npx marge mochawesome.json --reportDir=cypress/results
+        if: always()
+
+      - name: Zip artifacts
+        run: |
+          mkdir -p cypress/screenshots cypress/videos
+          zip -r artifacts.zip cypress/screenshots cypress/videos
+        if: always()
+
+      - name: Get test results summary
+        id: test-summary
+        run: |
+          if [ -f mochawesome.json ]; then
+            PASSING=$(jq -r '.stats.passes // 0' mochawesome.json)
+            FAILING=$(jq -r '.stats.failures // 0' mochawesome.json)
+            DURATION=$(jq -r '.stats.duration // 0' mochawesome.json)
+            DURATION_SEC=$((DURATION / 1000))
+            
+            echo "PASSING=$PASSING" >> $GITHUB_OUTPUT
+            echo "FAILING=$FAILING" >> $GITHUB_OUTPUT
+            echo "DURATION=${DURATION_SEC}s" >> $GITHUB_OUTPUT
+            
+            # Get test file name
+            TEST_FILE=$(find cypress/e2e -name "*.cy.js" | head -1 | xargs basename)
+            echo "TEST_FILE=$TEST_FILE" >> $GITHUB_OUTPUT
+          else
+            echo "PASSING=0" >> $GITHUB_OUTPUT
+            echo "FAILING=1" >> $GITHUB_OUTPUT
+            echo "DURATION=0s" >> $GITHUB_OUTPUT
+            echo "TEST_FILE=unknown.cy.js" >> $GITHUB_OUTPUT
+          fi
+        if: always()
+
+      - name: Send Telegram notification
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: |
+            🚀 **Cypress Test Results**
+            
+            Running: ${{ steps.test-summary.outputs.TEST_FILE }}
+            
+            ✅ ${{ steps.test-summary.outputs.PASSING }} passing (${{ steps.test-summary.outputs.DURATION }})
+            ❌ ${{ steps.test-summary.outputs.FAILING }} failing
+            
+            Repository: ${{ github.repository }}
+            Branch: ${{ github.ref_name }}
+            Commit: ${{ github.sha }}
+          document: cypress/results/mochawesome.html
+        if: always()
+
+      - name: Send JSON report
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          document: mochawesome.json
+        if: always()
+
+      - name: Send artifacts
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          document: artifacts.zip
+        if: always()
