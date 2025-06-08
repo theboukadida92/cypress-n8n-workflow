@@ -1,0 +1,27 @@
+{
+  "name": "cypress-n8n-workflow",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "cypress run"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/theboukadida92/cypress-n8n-workflow.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/theboukadida92/cypress-n8n-workflow/issues"
+  },
+  "homepage": "https://github.com/theboukadida92/cypress-n8n-workflow#readme",
+  "devDependencies": {
+    "cypress": "^14.3.2",
+    "mochawesome": "^7.1.3",
+    "mochawesome-merge": "^5.0.0",
+    "mochawesome-report-generator": "^6.2.0"
+  }
+}
