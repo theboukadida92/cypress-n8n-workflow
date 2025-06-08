@@ -1,0 +1,39 @@
+describe('Manage Address Book', () => {
+  it('Update address book information', () => {
+    // Step 1: Visit the website
+    cy.visit('https://automationteststore.com');
+
+    // Step 2: Enter Login Name and Password
+    cy.get('#customer_menu_top').contains('Login or register').click();
+    cy.get('#loginFrm_loginname').type('techpro');
+    cy.get('#loginFrm_password').type('Techpro!');
+
+    // Step 3: Click the login button
+    cy.get('button[title="Login"]').click();
+
+    // Step 4: Click on "Manage Address Book" in the "Welcome back ..." menu
+    cy.contains('Welcome back').should('be.visible');
+    cy.contains('Manage Address Book').click();
+
+    // Step 5: Click on the Edit button
+    cy.get('a[title="Edit"]').first().click();
+
+    // Step 6: Change all the information in the form
+    cy.get('#AddressFrm_firstname').clear().type('NewFirstName');
+    cy.get('#AddressFrm_lastname').clear().type('NewLastName');
+    cy.get('#AddressFrm_address_1').clear().type('New Address Line 1');
+    cy.get('#AddressFrm_city').clear().type('New City');
+    cy.get('#AddressFrm_zone_id').select('Alabama'); // Example: Select a state
+    cy.get('#AddressFrm_postcode').clear().type('12345');
+    cy.get('#AddressFrm_country_id').select('United States'); // Example: Select a country
+
+    // Step 7: Save the changes
+    cy.get('button[title="Continue"]').click();
+
+    // Step 8: Verify that the changes have been applied
+    cy.contains('Your address has been successfully updated').should('be.visible');
+    cy.contains('NewFirstName').should('be.visible');
+    cy.contains('NewLastName').should('be.visible');
+    cy.contains('New Address Line 1').should('be.visible');
+  });
+});
